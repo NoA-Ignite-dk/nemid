@@ -1,0 +1,46 @@
+{
+  "name": "nemid",
+  "version": "1.0.4",
+  "description": "Node.js module for NemID authentication and signing",
+  "main": "index.js",
+  "browser": "browser.js",
+  "dependencies": {
+    "compare": "^2.0.0",
+    "nanoassert": "^2.0.0",
+    "node-webcrypto-ossl": "^1.0.48",
+    "secure-concat": "^1.0.1",
+    "xml-core": "^1.0.19",
+    "xmldsigjs": "^2.0.26"
+  },
+  "devDependencies": {
+    "axios": "^0.19.0",
+    "budo": "^11.6.3",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "standard": "^14.3.4",
+    "tape": "^4.11.0"
+  },
+  "scripts": {
+    "start": "budo example/client.js & node example/server.js & wait",
+    "pretest": "standard",
+    "test": "tape test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/emilbayes/nemid.git"
+  },
+  "keywords": [
+    "nemid",
+    "authentication",
+    "signing",
+    "signature",
+    "api",
+    "denmark"
+  ],
+  "author": "Emil Bay <github@tixz.dk>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/emilbayes/nemid/issues"
+  },
+  "homepage": "https://github.com/emilbayes/nemid#readme"
+}
