@@ -2,7 +2,7 @@ import compare from 'compare';
 import assert from 'nanoassert';
 import crypto from 'crypto';
 import WebCrypto from 'node-webcrypto-ossl';
-import XmlDSigJs from 'xmldsigjs';
+import * as XmlDSigJs from 'xmldsigjs';
 import { PIDCPRRequest } from './pid-cpr-request';
 import { Code, errors, NemIDError, NemIDErrorType } from './error';
 
@@ -30,6 +30,13 @@ export interface SignedParameters {
 	SP_CERT: string;
 	PARAMS_DIGEST: string;
 	DIGEST_SIGNATURE: string;
+}
+
+export interface UserInfo {
+	C: string;
+	O: string;
+	CN: string;
+	serialNumber: string;
 }
 
 export class NemID {
@@ -64,7 +71,7 @@ export class NemID {
 		});
 	}
 
-	verifyAuthenticate (nemIdResponse: string, cb: (err: any, res: false | { [key: string]: string; }) => void) {
+	verifyAuthenticate (nemIdResponse: string, cb: (err: any, res: false | UserInfo) => void) {
 		assert(typeof nemIdResponse === 'string', 'nemIdResponse must be string');
 		assert(typeof cb === 'function', 'callback must be given');
 
@@ -116,7 +123,7 @@ export class NemID {
 				);
 
 			const user = subjects
-				.find(c => c.serialNumber != null);
+				.find(c => c.serialNumber != null) as UserInfo | undefined;
 
 			if (user == null) return cb(null, false);
 
@@ -136,11 +143,12 @@ export class NemID {
 		assert(_keys.includes('params_digest') === false);
 		assert(_keys.includes('digest_signature') === false);
 
-		const input = this.normalizedParameters(parameters);
+		const SP_CERT = spCert.toString('base64');
+		const input = this.normalizedParameters({ ...parameters, SP_CERT});
 
 		const signedParameters: SignedParameters = {
 			...parameters,
-			SP_CERT: spCert.toString('base64'),
+			SP_CERT: SP_CERT,
 			PARAMS_DIGEST: crypto.createHash('sha256')
 				.update(input)
 				.digest('base64'),
@@ -152,7 +160,7 @@ export class NemID {
 		return signedParameters;
 	}
 
-	static normalizedParameters (parameters: Parameters) {
+	static normalizedParameters (parameters: Parameters & { SP_CERT: string }) {
 		const keys = (
 			Object
 				.keys(parameters)
