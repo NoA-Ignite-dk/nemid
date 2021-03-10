@@ -1,0 +1,174 @@
+import compare from 'compare';
+import assert from 'nanoassert';
+import crypto from 'crypto';
+import WebCrypto from 'node-webcrypto-ossl';
+import XmlDSigJs from 'xmldsigjs';
+import { PIDCPRRequest } from './pid-cpr-request';
+import { Code, errors, NemIDError, NemIDErrorType } from './error';
+
+// Unfortunately a singleton
+XmlDSigJs.Application.setEngine('OpenSSL', new WebCrypto() as unknown as Crypto);
+
+function derToPem (buf: Buffer) {
+	return `-----BEGIN CERTIFICATE-----
+${buf.toString('base64')!.match(/.{1,64}/g)!.join('\n')}
+-----END CERTIFICATE-----`;
+}
+
+interface Parameters {
+	clientflow: string;
+	clientmode: string;
+	timestamp: string;
+	ORIGIN: string;
+}
+
+export interface SignedParameters {
+	clientflow: string;
+	clientmode: string;
+	timestamp: string;
+	ORIGIN: string;
+	SP_CERT: string;
+	PARAMS_DIGEST: string;
+	DIGEST_SIGNATURE: string;
+}
+
+export class NemID {
+	static PROD = { pid: PIDCPRRequest.PROD }
+	static TEST = { pid: PIDCPRRequest.TEST }
+
+	private _clientKey: crypto.KeyObject;
+	private _clientCert: Buffer;
+	private _serverCA: Buffer;
+	private _lookup: PIDCPRRequest;
+
+	constructor ({ spid, clientKey, clientCert, serverCA, env = NemID.TEST }: { spid: string, clientKey: crypto.KeyObject, clientCert: Buffer, serverCA: Buffer, env: (typeof NemID.TEST | typeof NemID.PROD ) }) {
+		this._clientKey = clientKey;
+		this._clientCert = clientCert;
+		this._serverCA = serverCA;
+
+		this._lookup = new PIDCPRRequest(spid, clientKey, derToPem(clientCert), env.pid);
+	}
+
+	authenticate ({ origin }: { origin: string}) {
+		const parameters: Parameters = {
+			clientflow: 'OcesLogin2',
+			clientmode: 'standard',
+			timestamp: Buffer.from(new Date().toISOString().slice(0, -5).replace('T', ' ') + '+0000').toString('base64'),
+			ORIGIN: origin
+		};
+
+		return NemID.signParameters({
+			parameters,
+			privateKey: this._clientKey,
+			spCert: this._clientCert
+		});
+	}
+
+	verifyAuthenticate (nemIdResponse: string, cb: (err: any, res: false | { [key: string]: string; }) => void) {
+		assert(typeof nemIdResponse === 'string', 'nemIdResponse must be string');
+		assert(typeof cb === 'function', 'callback must be given');
+
+		const responseData = Buffer.from(nemIdResponse, 'base64').toString();
+		const error = NemID.errorsByCode.get(responseData as Code);
+		if (error != null) return process.nextTick(cb, new NemIDError(error));
+
+		// An RSA signature is well beyond 32 bytes
+		if (responseData.length < 32) {
+			const err = new NemIDError(NemID.errorsByCode.get('NODE001')!);
+			err.cause += '. Input: ' + responseData;
+
+			return process.nextTick(cb, err);
+		}
+
+		let doc: Document;
+		let signedXml: XmlDSigJs.SignedXml;
+		try {
+			doc = XmlDSigJs.Parse(responseData);
+			const signature = doc.getElementsByTagNameNS('http://www.w3.org/2000/09/xmldsig#', 'Signature');
+
+			signedXml = new XmlDSigJs.SignedXml(doc);
+			signedXml.LoadXml(signature[0]);
+		} catch (ex) {
+			const err = new NemIDError(NemID.errorsByCode.get('NODE001')!);
+			err.cause += '. Exception: ' + ex;
+
+			return process.nextTick(cb, err);
+		}
+
+		signedXml.Verify().then(isValid => {
+			if (isValid === false) return cb(null, false);
+
+			const x509 = doc.getElementsByTagNameNS('http://www.w3.org/2000/09/xmldsig#', 'X509Data');
+
+			const certs = Array.from(x509).flatMap(c => XmlDSigJs.KeyInfoX509Data.LoadXml(c).Certificates);
+
+			const subjects = certs
+				.map(c => c.Subject
+					.split(', ')
+					.reduce((o, kv) => {
+						let [k, v] = kv.split('=');
+						// remap this OID to the identifier name
+						if (k === '2.5.4.5') k = 'serialNumber';
+
+						o[k] = v;
+						return o;
+					}, {} as {[key: string]: string})
+				);
+
+			const user = subjects
+				.find(c => c.serialNumber != null);
+
+			if (user == null) return cb(null, false);
+
+			return cb(null, user);
+		}).catch(ex => {
+			process.nextTick(cb, ex);
+		});
+	}
+
+	matchCPR (pid: string, cpr: string, cb: (err?: any, result?: boolean | undefined) => void) {
+		return this._lookup.match(pid, cpr, cb);
+	}
+
+	static signParameters ({ parameters, privateKey, spCert }: { parameters: Parameters, privateKey: crypto.KeyObject, spCert: Buffer }): SignedParameters {
+		const _keys = Object.keys(parameters).map(k => k.toLowerCase());
+		assert(_keys.includes('sp_cert') === false);
+		assert(_keys.includes('params_digest') === false);
+		assert(_keys.includes('digest_signature') === false);
+
+		const input = this.normalizedParameters(parameters);
+
+		const signedParameters: SignedParameters = {
+			...parameters,
+			SP_CERT: spCert.toString('base64'),
+			PARAMS_DIGEST: crypto.createHash('sha256')
+				.update(input)
+				.digest('base64'),
+			DIGEST_SIGNATURE: crypto.createSign('sha256')
+				.update(input)
+				.sign(privateKey, 'base64')
+		};
+
+		return signedParameters;
+	}
+
+	static normalizedParameters (parameters: Parameters) {
+		const keys = (
+			Object
+				.keys(parameters)
+				.sort((a, b)  => compare(a.toLowerCase(), b.toLowerCase()))
+		) as (keyof Parameters)[];
+
+		return keys.reduce((sum: string, key: keyof Parameters) => {
+			sum += key + parameters[key];
+			return sum;
+		}, '');
+	}
+
+	static NemIDError = NemIDError;
+	static errorsByCode = errors.reduce((map, e) => {
+		map.set(e.code, e);
+
+		return map;
+	}, new Map<Code, NemIDErrorType>())
+}

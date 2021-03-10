@@ -1,22 +1,22 @@
-const nemid = require('..')
+const nemid = require('../dist/browser');
 const axios = require('axios')
 
 ;(async function () {
-  const { data: parameters } = await axios('http://localhost:8000/authenticate')
+	const { data: parameters } = await axios('http://localhost:8000/authenticate');
 
-  const context = nemid(parameters)
-  // optional styling
-  context.element.style.border = 0
-  context.element.style.width = '320px'
-  context.element.style.height = '480px'
+	const context = nemid(parameters);
+	// optional styling
+	context.element.style.border = 0;
+	context.element.style.width = '320px';
+	context.element.style.height = '480px';
 
-  document.body.appendChild(context.element)
+	document.body.appendChild(context.element);
 
-  const result = await context.done
+	const result = await context.done;
 
-  const { data } = await axios.post('http://localhost:8000/authenticate/verify', { content: result })
+	const { data } = await axios.post('http://localhost:8000/authenticate/verify', { content: result });
 
-  document.body.removeChild(context.element)
+	document.body.removeChild(context.element);
 
-  console.log(data)
-})()
+	console.log(data);
+})();
