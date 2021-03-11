@@ -1,6 +1,6 @@
 import { SignedParameters } from './index';
 
-export = function (parameters: SignedParameters, prod: boolean) {
+export function getNemIDAuthContext(parameters: SignedParameters, prod: boolean) {
 	const NEMID_ORIGIN = prod === true ? 'https://applet.danid.dk' : 'https://appletk.danid.dk';
 	const element = document.createElement('iframe');
 	element.id = 'nemid-' + Math.random().toString(32);
@@ -54,4 +54,4 @@ export = function (parameters: SignedParameters, prod: boolean) {
 			return false;
 		}
 	}
-};
+}

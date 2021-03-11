@@ -5,6 +5,7 @@ import WebCrypto from 'node-webcrypto-ossl';
 import * as XmlDSigJs from 'xmldsigjs';
 import { PIDCPRRequest } from './pid-cpr-request';
 import { Code, errors, NemIDError, NemIDErrorType } from './error';
+export type { getNemIDAuthContext } from './browser';
 
 // Unfortunately a singleton
 XmlDSigJs.Application.setEngine('OpenSSL', new WebCrypto() as unknown as Crypto);
