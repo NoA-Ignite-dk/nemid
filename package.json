@@ -26,7 +26,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/noaignite/nemid.git"
+    "url": "git+https://github.com/NoA-Ignite-dk/nemid.git"
   },
   "keywords": [
     "nemid",
@@ -39,7 +39,7 @@
   "author": "Joshua Nielsen <jdpnielsen@gmail.com> (https://github.com/jdpnielsen)",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/noaignite/nemid/issues"
+    "url": "https://github.com/NoA-Ignite-dk/nemid/issues"
   },
-  "homepage": "https://github.com/noaignite/nemid#readme"
+  "homepage": "https://github.com/NoA-Ignite-dk/nemid#readme"
 }
