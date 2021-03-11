@@ -146,7 +146,7 @@ export class NemID {
 		const SP_CERT = spCert.toString('base64');
 		const input = this.normalizedParameters({ ...parameters, SP_CERT});
 
-		const signedParameters: SignedParameters = {
+		const signedParameters = {
 			...parameters,
 			SP_CERT: SP_CERT,
 			PARAMS_DIGEST: crypto.createHash('sha256')
