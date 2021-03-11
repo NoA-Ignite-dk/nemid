@@ -40,6 +40,27 @@ export interface UserInfo {
 	serialNumber: string;
 }
 
+interface NemIDParam {
+	/** The Service Provider ID, provided by Nets at registration */
+	spid: string,
+
+	/** The client private key provided by Nets */
+	clientKey: crypto.KeyObject,
+
+	/** The client certificate, including intermediate certs. */
+	clientCert: Buffer,
+
+	/** Nets root certificate. This can be downloaded from NemIDs website. */
+	serverCA: Buffer,
+
+	/**
+	 * An object of endpoints for the different environments.
+	 * Comes with `NemID.TEST` and `NemID.PROD` built in.
+	 * @default {pid:'pidws.pp.certifikat.dk'}
+	 */
+	env: { pid: string }
+}
+
 export class NemID {
 	static PROD = { pid: PIDCPRRequest.PROD }
 	static TEST = { pid: PIDCPRRequest.TEST }
@@ -49,7 +70,7 @@ export class NemID {
 	private _serverCA: Buffer;
 	private _lookup: PIDCPRRequest;
 
-	constructor ({ spid, clientKey, clientCert, serverCA, env = NemID.TEST }: { spid: string, clientKey: crypto.KeyObject, clientCert: Buffer, serverCA: Buffer, env: (typeof NemID.TEST | typeof NemID.PROD ) }) {
+	constructor ({ spid, clientKey, clientCert, serverCA, env = NemID.TEST }: NemIDParam) {
 		this._clientKey = clientKey;
 		this._clientCert = clientCert;
 		this._serverCA = serverCA;

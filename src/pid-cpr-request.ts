@@ -14,7 +14,7 @@ export class PIDCPRRequest {
 
 	constructor (spid: string, key: crypto.KeyObject, cert: string, host = PIDCPRRequest.TEST) {
 		this._spid = spid;
-		// Hack since https.request can work with KeyObject apparently
+		// Hack since https.request can't work with KeyObject apparently
 		this._key = key.export({ type: 'pkcs1', format: 'pem' });
 		this._cert = cert;
 		this._host = host;
