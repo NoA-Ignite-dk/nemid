@@ -71,20 +71,19 @@ export class NemID {
 		});
 	}
 
-	verifyAuthenticate (nemIdResponse: string, cb: (err: any, res: false | UserInfo) => void) {
+	async verifyAuthenticate (nemIdResponse: string) {
 		assert(typeof nemIdResponse === 'string', 'nemIdResponse must be string');
-		assert(typeof cb === 'function', 'callback must be given');
 
 		const responseData = Buffer.from(nemIdResponse, 'base64').toString();
 		const error = NemID.errorsByCode.get(responseData as Code);
-		if (error != null) return process.nextTick(cb, new NemIDError(error));
+		if (error != null) throw new NemIDError(error);
 
 		// An RSA signature is well beyond 32 bytes
 		if (responseData.length < 32) {
 			const err = new NemIDError(NemID.errorsByCode.get('NODE001')!);
 			err.cause += '. Input: ' + responseData;
 
-			return process.nextTick(cb, err);
+			throw err;
 		}
 
 		let doc: Document;
@@ -99,42 +98,44 @@ export class NemID {
 			const err = new NemIDError(NemID.errorsByCode.get('NODE001')!);
 			err.cause += '. Exception: ' + ex;
 
-			return process.nextTick(cb, err);
+			throw err;
 		}
 
-		signedXml.Verify().then(isValid => {
-			if (isValid === false) return cb(null, false);
+		const isValid  = await signedXml.Verify();
 
-			const x509 = doc.getElementsByTagNameNS('http://www.w3.org/2000/09/xmldsig#', 'X509Data');
+		if (isValid === false) {
+			return false;
+		}
 
-			const certs = Array.from(x509).flatMap(c => XmlDSigJs.KeyInfoX509Data.LoadXml(c).Certificates);
+		const x509 = doc.getElementsByTagNameNS('http://www.w3.org/2000/09/xmldsig#', 'X509Data');
 
-			const subjects = certs
-				.map(c => c.Subject
-					.split(', ')
-					.reduce((o, kv) => {
-						let [k, v] = kv.split('=');
-						// remap this OID to the identifier name
-						if (k === '2.5.4.5') k = 'serialNumber';
+		const certs = Array.from(x509).flatMap(c => XmlDSigJs.KeyInfoX509Data.LoadXml(c).Certificates);
 
-						o[k] = v;
-						return o;
-					}, {} as {[key: string]: string})
-				);
+		const subjects = certs
+			.map(c => c.Subject
+				.split(', ')
+				.reduce((o, kv) => {
+					let [k, v] = kv.split('=');
+					// remap this OID to the identifier name
+					if (k === '2.5.4.5') k = 'serialNumber';
 
-			const user = subjects
-				.find(c => c.serialNumber != null) as UserInfo | undefined;
+					o[k] = v;
+					return o;
+				}, {} as {[key: string]: string})
+			);
 
-			if (user == null) return cb(null, false);
+		const user = subjects
+			.find(c => c.serialNumber != null) as UserInfo | undefined;
 
-			return cb(null, user);
-		}).catch(ex => {
-			process.nextTick(cb, ex);
-		});
+		if (user == null) {
+			return false;
+		}
+
+		return user;
 	}
 
-	matchCPR (pid: string, cpr: string, cb: (err?: any, result?: boolean | undefined) => void) {
-		return this._lookup.match(pid, cpr, cb);
+	async matchCPR (pid: string, cpr: string): Promise<boolean> {
+		return this._lookup.match(pid, cpr);
 	}
 
 	static signParameters ({ parameters, privateKey, spCert }: { parameters: Parameters, privateKey: crypto.KeyObject, spCert: Buffer }): SignedParameters {

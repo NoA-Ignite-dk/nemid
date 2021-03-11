@@ -20,7 +20,7 @@ export class PIDCPRRequest {
 		this._host = host;
 	}
 
-	match (pid: string, cpr: string, cb: (err?: any, result?: boolean) => void) {
+	async match (pid: string, cpr: string): Promise<boolean> {
 		assert(typeof pid === 'string', 'pid must be string');
 		assert(typeof cpr === 'string', 'cpr must be string');
 		assert(cpr.length === 10, 'cpr must be 10 digits');
@@ -29,32 +29,35 @@ export class PIDCPRRequest {
 		const rid = crypto.randomBytes(16).toString('hex');
 
 		const body = this._body(rid, this._spid, pid, cpr);
-		const req = https.request({
-			method: 'POST',
-			hostname: this._host,
-			path: '/pid_serviceprovider_server/pidxml/',
-			headers: {
-				'content-type': 'application/x-www-form-urlencoded'
-			},
-			key: this._key,
-			cert: this._cert
-		}, function (res) {
-			if (res.statusCode !== 200) return cb(new Error('Unable to access PID/CPR service'));
 
-			res.pipe(concat({ limit: 4096 }, function (err: any, res: Buffer) {
-				if (err) return cb(err);
-
-				const doc = xml.Parse(res.toString());
-
-				const result = doc.getElementById(rid);
-				if (result == null) return cb(new Error('Invalid response from PID/CPR service'));
-
-				return cb(null, result.firstElementChild!.getAttribute('statusCode') === '0');
-			}));
+		return new Promise((resolve, reject) => {
+			const req = https.request({
+				method: 'POST',
+				hostname: this._host,
+				path: '/pid_serviceprovider_server/pidxml/',
+				headers: {
+					'content-type': 'application/x-www-form-urlencoded'
+				},
+				key: this._key,
+				cert: this._cert
+			}, function (res) {
+				if (res.statusCode !== 200) return reject(new Error('Unable to access PID/CPR service'));
+	
+				res.pipe(concat({ limit: 4096 }, function (err: any, res: Buffer) {
+					if (err) return reject(err);
+	
+					const doc = xml.Parse(res.toString());
+	
+					const result = doc.getElementById(rid);
+					if (result == null) return reject(new Error('Invalid response from PID/CPR service'));
+	
+					return resolve(result.firstElementChild!.getAttribute('statusCode') === '0');
+				}));
+			});
+	
+			req.once('error', reject);
+			req.end(`PID_REQUEST=${body}`);
 		});
-
-		req.once('error', cb);
-		req.end(`PID_REQUEST=${body}`);
 	}
 
 	_body (rid: string, spid: string, pid: string, cpr: string) {
