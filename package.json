@@ -9,7 +9,7 @@
   "main": "./dist/index.js",
   "browser": "./dist/browser.js",
   "types": "./dist/index.d.js",
-  "private": "true",
+  "private": true,
   "dependencies": {
     "compare": "^2.0.0",
     "nanoassert": "^2.0.0",
