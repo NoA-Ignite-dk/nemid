@@ -2,12 +2,27 @@
 
 > Node.js module for NemID authentication and signing
 
+## Install
+
+```sh
+npm install @noaignite/nemid
+```
+
+Note that the module is private, and as such cannot be installed unless you are authenticated with the NOA Ignite npm org.
+
+You can create a `.npmrc` file in your repository with following contents:
+`//registry.npmjs.org/:_authToken=${NPM_TOKEN}`
+
+Ensure you have NPM_TOKEN set as environment variable on your local machine & CI/CD server.
+
+Read more [here](https://docs.npmjs.com/creating-and-viewing-access-tokens)
+
 ## Usage
 
 Server:
 
 ```js
-const NemID = require('nemid')
+const { NemID } = require('@noaignite/nemid')
 const fs = require('fs')
 const path = require('path')
 const crypto = require('crypto')
@@ -37,23 +52,24 @@ server.get('/authenticate', (req, res) => {
 server.post('/authenticate/verify', (req, res) => {
   const response = req.body
 
-  nemid.verifyAuthenticate(response, function (err, userInfo) {
-    if (err) {
+  nemid.verifyAuthenticate(response)
+    .then((userInfo) => {
+      if (userInfo === false) {
+        return res.send({ success: false })
+      }
+
+      // Can do stuff with userInfo now
+      console.log(userInfo.serialNumber) // contains the user PID
+
+      return res.send({ success: true })
+    })
+    .catch((err) => {
       // err is a NemIDError
       // Log the cause of the error on the server somehow
       console.error(err)
       // And send a user message to the client
       return res.send(err.userMessage.da)
-    }
-
-    if (userInfo === false) {
-      return res.send({ success: false })
-    }
-
-    // Can do stuff with userInfo now
-    console.log(userInfo.serialNumber) // contains the user PID
-
-    return res.send({ success: true })
+    })
   })
 })
 ```
@@ -61,10 +77,10 @@ server.post('/authenticate/verify', (req, res) => {
 Client:
 
 ```js
-const nemid = require('nemid')
+const { getNemIDAuthContext } = require('@noaignite/nemid')
 const { data: parameters } = await get('http://localhost:8080/authenticate')
 
-const context = nemid(parameters)
+const context = getNemIDAuthContext(parameters)
 
 document.body.appendChild(context.element)
 
@@ -77,7 +93,7 @@ const { data: success } = await post('http://localhost:8080/authenticate/verify'
 
 ### `const nemid = new NemID({ spid, clientKey, clientCert, serverCA, env = NemID.TEST })`
 
-Create a new NemID instance. Takes 3 arguments:
+Create a new NemID instance. Takes 5 arguments:
 
 * `spid` is the Service Provider ID, provided by Nets at registration.
 * `clientKey` must be the client private key provided by Nets. See the section
@@ -94,19 +110,23 @@ Create a new NemID instance. Takes 3 arguments:
 Create a new authentication attempt, by generating the appropriate parameters to
 be passed to the client side script.
 
-### `nemid.verifyAuthenticate(response, cb(err, userInfo))`
+### `const userInfo = await nemid.verifyAuthenticate(response)`
 
-Verify the response from the NemID applet. May call back with an error if the
-result was malformed or an error code from NemID. Otherwise calls back with
-`false` for an invalid attempt or a object describing the authenticated user.
+Verify the response from the NemID applet. May throw an error if the
+result was malformed or an error code from NemID. Otherwise returns `false`
+for an invalid attempt or a object describing the authenticated user.
 
-### `nemid.matchCPR(pid, cpr, cb(err, valid))`
+### `const valid = nemid.matchCPR(pid, cpr)`
 
 Verify whether `pid` and `cpr` refer to the same person.
 
 ## Client API
 
-### `const context = nemId(parameters, prod = false)`
+```ts
+import { getNemIDAuthContext } from '@noeignite/nemid`;
+```
+
+### `const context = getNemIDAuthContext(parameters, prod = false)`
 
 Initialise a new NemID authentication context with `parameters` from the Server
 API and which origin frame to load. Defaults to test (`appletk.danid.dk`).
@@ -173,12 +193,6 @@ This file does not need to be converted to DER format.
 **Note** `-nodes` removes the passphrase from the private key. If you want to
 keep this, remove the option and supply your passphrase to
 `crypto.createPrivateKey`
-
-## Install
-
-```sh
-npm install nemid
-```
 
 ## License
 

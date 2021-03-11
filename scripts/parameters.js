@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const cert = path.join(__dirname, '../cert.der');
 const key = path.join(__dirname, '../test.key');
-const NemID = require('..');
+const { NemID } = require('../dist');
 
 const privateKey = crypto.createPrivateKey({
 	key: fs.readFileSync(key),

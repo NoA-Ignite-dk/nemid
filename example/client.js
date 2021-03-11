@@ -1,10 +1,10 @@
-const nemid = require('../dist/browser');
+const { getNemIDAuthContext } = require('@noaignite/nemid');
 const axios = require('axios')
 
 ;(async function () {
 	const { data: parameters } = await axios('http://localhost:8000/authenticate');
 
-	const context = nemid(parameters);
+	const context = getNemIDAuthContext(parameters);
 	// optional styling
 	context.element.style.border = 0;
 	context.element.style.width = '320px';
