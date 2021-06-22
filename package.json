@@ -5,14 +5,13 @@
   "scripts": {
     "build": "tsc",
     "test": "eslint .",
-		"version": "standard-version",
-		"clean": "rimraf ./dist",
+    "version": "standard-version",
+    "clean": "rimraf ./dist",
     "prepare-release": "run-s clean test build version"
   },
   "main": "./dist/index.js",
   "browser": "./dist/browser.js",
   "types": "./dist/index.d.js",
-  "private": true,
   "dependencies": {
     "compare": "^2.0.0",
     "nanoassert": "^2.0.0",
