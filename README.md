@@ -1,5 +1,7 @@
 # `nemid`
 
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
+
 > Node.js module for NemID authentication and signing
 
 ## Install

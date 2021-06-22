@@ -4,7 +4,10 @@
   "description": "Node.js module for NemID authentication and signing",
   "scripts": {
     "build": "tsc",
-    "test": "eslint ."
+    "test": "eslint .",
+		"version": "standard-version",
+		"clean": "rimraf ./dist",
+    "prepare-release": "run-s clean test build version"
   },
   "main": "./dist/index.js",
   "browser": "./dist/browser.js",
@@ -21,12 +24,21 @@
   "devDependencies": {
     "@types/node": "^14.14.33",
     "@typescript-eslint/eslint-plugin": "^4.28.0",
+    "cz-conventional-changelog": "^3.3.0",
     "eslint": "^7.29.0",
+    "npm-run-all": "^4.1.5",
+    "rimraf": "^3.0.2",
+    "standard-version": "^9.3.0",
     "typescript": "^4.3.4"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/NoA-Ignite-dk/nemid.git"
+  },
+  "config": {
+    "commitizen": {
+      "path": "cz-conventional-changelog"
+    }
   },
   "keywords": [
     "nemid",
