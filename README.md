@@ -7,7 +7,7 @@
 ## Install
 
 ```sh
-npm install @noaignite/nemid
+npm install @noaignite-dk/nemid
 ```
 
 Note that the module is private, and as such cannot be installed unless you are authenticated with the NOA Ignite npm org.
