@@ -15,7 +15,7 @@ npm install @noaignite-dk/nemid
 Server:
 
 ```js
-const { NemID } = require('@noaignite/nemid')
+const { NemID } = require('@noaignite-dk/nemid')
 const fs = require('fs')
 const path = require('path')
 const crypto = require('crypto')
@@ -70,7 +70,7 @@ server.post('/authenticate/verify', (req, res) => {
 Client:
 
 ```js
-const { getNemIDAuthContext } = require('@noaignite/nemid')
+const { getNemIDAuthContext } = require('@noaignite-dk/nemid')
 const { data: parameters } = await get('http://localhost:8080/authenticate')
 
 const context = getNemIDAuthContext(parameters)

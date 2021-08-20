@@ -1,4 +1,4 @@
-const { getNemIDAuthContext } = require('@noaignite/nemid');
+const { getNemIDAuthContext } = require('@noaignite-dk/nemid');
 const axios = require('axios')
 
 ;(async function () {

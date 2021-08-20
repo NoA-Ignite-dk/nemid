@@ -6,7 +6,7 @@ const fs = require('fs');
 const cert = path.join(__dirname, 'cert.der');
 const key = path.join(__dirname, 'test.key');
 const issuer = path.join(__dirname, 'issuer.der');
-const { NemID } = require('@noaignite/nemid');
+const { NemID } = require('@noaignite-dk/nemid');
 
 const nemid = new NemID({
 	clientKey: crypto.createPrivateKey({
