@@ -10,15 +10,6 @@
 npm install @noaignite-dk/nemid
 ```
 
-Note that the module is private, and as such cannot be installed unless you are authenticated with the NOA Ignite npm org.
-
-You can create a `.npmrc` file in your repository with following contents:
-`//registry.npmjs.org/:_authToken=${NPM_TOKEN}`
-
-Ensure you have NPM_TOKEN set as environment variable on your local machine & CI/CD server.
-
-Read more [here](https://docs.npmjs.com/creating-and-viewing-access-tokens)
-
 ## Usage
 
 Server:
