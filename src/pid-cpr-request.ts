@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import https from 'https';
 import assert from 'nanoassert';
 import concat from 'secure-concat';
-import xml from 'xml-core';
+import { Parse } from 'xml-core';
 
 export class PIDCPRRequest {
 	static TEST = 'pidws.pp.certifikat.dk'
@@ -46,7 +46,7 @@ export class PIDCPRRequest {
 				res.pipe(concat({ limit: 4096 }, function (err: any, res: Buffer) {
 					if (err) return reject(err);
 	
-					const doc = xml.Parse(res.toString());
+					const doc = Parse(res.toString());
 	
 					const result = doc.getElementById(rid);
 					if (result == null) return reject(new Error('Invalid response from PID/CPR service'));
