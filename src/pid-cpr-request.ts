@@ -48,10 +48,10 @@ export class PIDCPRRequest {
 	
 					const doc = Parse(res.toString());
 	
-					const result = doc.getElementById(rid);
+					const result = doc.getElementById(rid) as Element;
 					if (result == null) return reject(new Error('Invalid response from PID/CPR service'));
 	
-					return resolve(result.firstElementChild!.getAttribute('statusCode') === '0');
+					return resolve((result.firstChild as Element).getAttribute('statusCode') === '0');
 				}));
 			});
 	
